@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/mehyaa/claude-telegram/internal/ipc"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 const twoQuestions = "Two things.\n\n" +
@@ -89,7 +89,7 @@ func TestQuestionsAskedAgainOrDropped(t *testing.T) {
 
 	// The next reply asks Q17 again, reworded, and not Q16.
 	h.turnEnds("Still open:\n❓ **Q17** - **Name**: ctg or cctg?\n➡️ ctg.")
-	h.until("dropping Q16", func(m telegramtest.Sent) bool {
+	h.until("dropping Q16", func(m fake.Sent) bool {
 		return m.MessageID == p16.MessageID && m.Text == "✅ 1.1 · a · no longer asked"
 	})
 	h.tg.Quiet(t, 200*time.Millisecond) // no second ping for Q17
@@ -123,7 +123,7 @@ func TestDismissQuestionAndPostQuestionLifecycle(t *testing.T) {
 	if toast := h.tg.Answered(t); toast != "Dismissed 1.1" {
 		t.Fatalf("toast %q", toast)
 	}
-	edited := h.until("dismissed 1.1", func(m telegramtest.Sent) bool {
+	edited := h.until("dismissed 1.1", func(m fake.Sent) bool {
 		return m.MessageID == p1.MessageID && m.Text == "✖ 1.1 · a · dismissed"
 	})
 	if edited.Keyboard != nil {
@@ -140,11 +140,11 @@ func TestDismissQuestionAndPostQuestionLifecycle(t *testing.T) {
 	// Tap ✖ Dismiss all to clear remaining items; session returns to 💤 idle.
 	h.tg.Tap(owner, pend.MessageID, "dma:a")
 	h.tg.Answered(t)
-	h.until("dismissed 1.2", func(m telegramtest.Sent) bool {
+	h.until("dismissed 1.2", func(m fake.Sent) bool {
 		return m.MessageID == p2.MessageID && m.Text == "✖ 1.2 · a · dismissed"
 	})
 	h.tg.Send(owner, "/list")
-	list := h.until("list idle", func(m telegramtest.Sent) bool {
+	list := h.until("list idle", func(m fake.Sent) bool {
 		return strings.Contains(m.Text, "1 · a · 💤 idle")
 	})
 	if strings.Contains(list.Text, "❓") {
@@ -155,7 +155,7 @@ func TestDismissQuestionAndPostQuestionLifecycle(t *testing.T) {
 	h.call(ipc.Request{Op: ipc.OpItemAdd, SessionID: "aaaa1111", Item: &ipc.Item{
 		Key: "post:test", Kind: ipc.KindPost, Summary: "Want me to commit this?", Detail: []byte(`{"question":"Want me to commit this?"}`),
 	}})
-	postPing := h.until("post ping", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "1.3") })
+	postPing := h.until("post ping", func(m fake.Sent) bool { return strings.Contains(m.Text, "1.3") })
 	// The turn that added the post_question ends first: it stays open.
 	h.turnEnds("Want me to commit this?")
 	h.tg.Send(owner, "/pending")
@@ -164,7 +164,7 @@ func TestDismissQuestionAndPostQuestionLifecycle(t *testing.T) {
 	}
 	// The next turn ends without asking it again: it closes automatically.
 	h.turnEnds("Committed and pushed.")
-	h.until("closing post_question", func(m telegramtest.Sent) bool {
+	h.until("closing post_question", func(m fake.Sent) bool {
 		return m.MessageID == postPing.MessageID && m.Text == "✅ 1.3 · a · no longer asked"
 	})
 }

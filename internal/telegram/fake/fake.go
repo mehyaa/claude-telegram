@@ -1,6 +1,7 @@
-// Package telegramtest is a fake Bot API server for tests. Tests push the
-// updates a phone would produce and read back what the bot sent.
-package telegramtest
+// Package fake is a fake Bot API server for tests and for the faketg
+// probe. Callers push the updates a phone would produce and read back what
+// the bot sent.
+package fake
 
 import (
 	"encoding/json"

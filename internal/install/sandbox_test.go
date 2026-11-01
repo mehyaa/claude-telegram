@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/mehyaa/claude-telegram/contrib"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 func TestSandbox(t *testing.T) {
@@ -53,7 +53,7 @@ func TestSandbox(t *testing.T) {
 	mcpFlag := filepath.Join(root, "mcp-added")
 	writeFakes(t, fakeDir, calls, mcpFlag)
 
-	tg := telegramtest.New(t)
+	tg := fake.New(t)
 	env := sandboxEnv(home, runDir, fakeDir, envFile, tg.URL)
 	run := func(args ...string) (string, error) {
 		cmd := exec.Command(built, args...)

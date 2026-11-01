@@ -13,7 +13,7 @@ import (
 
 	"github.com/mehyaa/claude-telegram/internal/drive"
 	"github.com/mehyaa/claude-telegram/internal/ipc"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 func TestModeSteps(t *testing.T) {
@@ -247,7 +247,7 @@ func TestFilesAndEndAndMode(t *testing.T) {
 	}
 	before, _ := term.pressed()
 	h.tg.Tap(owner, mode.MessageID, mode.Buttons()["Manual"])
-	h.until("refused", func(m telegramtest.Sent) bool {
+	h.until("refused", func(m fake.Sent) bool {
 		return strings.Contains(m.Text, "passes through auto")
 	})
 	h.tg.Answered(t)
@@ -260,7 +260,7 @@ func TestFilesAndEndAndMode(t *testing.T) {
 	// The idle ping is its own message. Drain it if it arrives before the mode reply.
 	os.WriteFile(trans, []byte(`{"type":"permission-mode","permissionMode":"default"}`+"\n"), 0o644)
 	h.tg.Send(owner, "/mode 2")
-	mode = h.until("mode", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "🔀 Mode") })
+	mode = h.until("mode", func(m fake.Sent) bool { return strings.Contains(m.Text, "🔀 Mode") })
 	h.tg.Tap(owner, mode.MessageID, mode.Buttons()["Accept edits"])
 	switched := h.until("switched", hasPrefix("🔀 "))
 	h.tg.Answered(t)
@@ -276,7 +276,7 @@ func TestFilesAndEndAndMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	h.tg.Send(owner, "/list")
-	list = h.until("list", func(m telegramtest.Sent) bool { return m.Buttons()["⋯"] == "mm:a" })
+	list = h.until("list", func(m fake.Sent) bool { return m.Buttons()["⋯"] == "mm:a" })
 	if strings.Contains(list.Text, "ctx ") {
 		t.Fatalf("ctx on the list: %s", list.Text)
 	}
@@ -288,7 +288,7 @@ func TestFilesAndEndAndMode(t *testing.T) {
 	}
 
 	h.tg.Send(owner, "/last 5 full")
-	last := h.until("last", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "main.go") })
+	last := h.until("last", func(m fake.Sent) bool { return strings.Contains(m.Text, "main.go") })
 	data := ""
 	for label, cb := range last.Buttons() {
 		if strings.HasPrefix(label, "🧾") {
@@ -299,7 +299,7 @@ func TestFilesAndEndAndMode(t *testing.T) {
 		t.Fatalf("no diff button: %v\n%s", last.Buttons(), last.Text)
 	}
 	h.tg.Tap(owner, last.MessageID, data)
-	diffMsg := h.until("diff", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "language-diff") })
+	diffMsg := h.until("diff", func(m fake.Sent) bool { return strings.Contains(m.Text, "language-diff") })
 	h.tg.Answered(t)
 	if !strings.Contains(diffMsg.Text, "-old") || !strings.Contains(diffMsg.Text, "+new") {
 		t.Fatalf("diff: %s", diffMsg.Text)
@@ -343,18 +343,18 @@ func TestGrep(t *testing.T) {
 	}})
 
 	h.tg.Send(owner, "/grep 1 only-here-token")
-	hit := h.until("live hit", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "only-here-token") })
+	hit := h.until("live hit", func(m fake.Sent) bool { return strings.Contains(m.Text, "only-here-token") })
 	if strings.Contains(hit.Text, "banana") {
 		t.Fatalf("session search saw other sessions: %s", hit.Text)
 	}
 
 	h.tg.Send(owner, "/grep banana")
-	hits := h.until("banana", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "banana") })
+	hits := h.until("banana", func(m fake.Sent) bool { return strings.Contains(m.Text, "banana") })
 	if hits.Buttons()["📜 Around"] == "" {
 		t.Fatalf("buttons %v", hits.Buttons())
 	}
 	h.tg.Tap(owner, hits.MessageID, hits.Buttons()["📜 Around"])
-	around := h.until("around", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "before-one") })
+	around := h.until("around", func(m fake.Sent) bool { return strings.Contains(m.Text, "before-one") })
 	h.tg.Answered(t)
 	for _, s := range []string{"before-two", "banana split", "after-one", "after-two"} {
 		if !strings.Contains(around.Text, s) {
@@ -363,7 +363,7 @@ func TestGrep(t *testing.T) {
 	}
 
 	h.tg.Send(owner, "/grep ancient-token")
-	if got := h.until("none", func(m telegramtest.Sent) bool {
+	if got := h.until("none", func(m fake.Sent) bool {
 		return strings.Contains(m.Text, "ancient-token") || strings.Contains(m.Text, "No hits")
 	}); !strings.Contains(got.Text, "No hits") {
 		t.Fatalf("old file: %s", got.Text)
@@ -403,7 +403,7 @@ func TestStatus(t *testing.T) {
 	}})
 
 	h.tg.Send(owner, "/status")
-	got := h.until("status", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "🩺 Status") })
+	got := h.until("status", func(m fake.Sent) bool { return strings.Contains(m.Text, "🩺 Status") })
 	for _, s := range []string{"ctg 0.3.0", "v9.9.9", "hooks: out of date", "mcp: installed", "service: not installed", "9.9.9", "answer in the terminal", "Last error: none"} {
 		if !strings.Contains(got.Text, s) {
 			t.Errorf("status missing %q:\n%s", s, got.Text)
@@ -414,14 +414,14 @@ func TestStatus(t *testing.T) {
 	}
 	h.tg.Tap(owner, got.MessageID, got.Buttons()["⬆️ Update"])
 	h.until("updating", hasPrefix("⬆️ Updating"))
-	done := h.until("updated", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "binary replaced") })
+	done := h.until("updated", func(m fake.Sent) bool { return strings.Contains(m.Text, "binary replaced") })
 	h.tg.Answered(t)
 	if !updated || !strings.Contains(done.Text, "binary replaced") {
 		t.Fatalf("update %v %s", updated, done.Text)
 	}
 
 	h.tg.Send(owner, "/list")
-	list := h.until("list", func(m telegramtest.Sent) bool { return m.Buttons()["⋯"] == "mm:a" })
+	list := h.until("list", func(m fake.Sent) bool { return m.Buttons()["⋯"] == "mm:a" })
 	h.tg.Tap(owner, list.MessageID, "mm:a")
 	more := h.tg.Next(t)
 	h.tg.Answered(t)
@@ -448,12 +448,12 @@ func TestDiffOnAPermission(t *testing.T) {
 	h.call(ipc.Request{Op: ipc.OpItemAdd, SessionID: "aaaa1111", Item: &ipc.Item{
 		Key: "k1", Kind: ipc.KindPermission, Tool: "Edit", Summary: "Edit main.go", Detail: detail,
 	}})
-	ping := h.until("ping", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "1.1") })
+	ping := h.until("ping", func(m fake.Sent) bool { return strings.Contains(m.Text, "1.1") })
 	h.tg.Tap(owner, ping.MessageID, ping.Buttons()["Answer"])
-	card := h.until("card", func(m telegramtest.Sent) bool { return m.Buttons()["🧾 Diff"] != "" })
+	card := h.until("card", func(m fake.Sent) bool { return m.Buttons()["🧾 Diff"] != "" })
 	h.tg.Answered(t)
 	h.tg.Tap(owner, card.MessageID, card.Buttons()["🧾 Diff"])
-	got := h.until("diff", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "language-diff") })
+	got := h.until("diff", func(m fake.Sent) bool { return strings.Contains(m.Text, "language-diff") })
 	h.tg.Answered(t)
 	if !strings.Contains(got.Text, "-old") || !strings.Contains(got.Text, "+new") {
 		t.Fatalf("diff: %s", got.Text)
@@ -471,12 +471,12 @@ func TestLongDiffIsAFile(t *testing.T) {
 	h.call(ipc.Request{Op: ipc.OpItemAdd, SessionID: "aaaa1111", Item: &ipc.Item{
 		Key: "k1", Kind: ipc.KindPermission, Tool: "Write", Summary: "Write big.txt", Detail: detail,
 	}})
-	ping := h.until("ping", func(m telegramtest.Sent) bool { return m.Buttons()["Answer"] != "" })
+	ping := h.until("ping", func(m fake.Sent) bool { return m.Buttons()["Answer"] != "" })
 	h.tg.Tap(owner, ping.MessageID, ping.Buttons()["Answer"])
-	card := h.until("card", func(m telegramtest.Sent) bool { return m.Buttons()["🧾 Diff"] != "" })
+	card := h.until("card", func(m fake.Sent) bool { return m.Buttons()["🧾 Diff"] != "" })
 	h.tg.Answered(t)
 	h.tg.Tap(owner, card.MessageID, card.Buttons()["🧾 Diff"])
-	got := h.until("file", func(m telegramtest.Sent) bool { return m.Method == "sendDocument" })
+	got := h.until("file", func(m fake.Sent) bool { return m.Method == "sendDocument" })
 	h.tg.Answered(t)
 	if !strings.HasSuffix(got.File, ".diff") || !strings.Contains(got.Text, "Write") {
 		t.Fatalf("document %+v", got)
@@ -509,7 +509,7 @@ func TestEndLeavesALiveProcess(t *testing.T) {
 	h.tg.Send(owner, "/end 1")
 	ask := h.tg.Next(t)
 	h.tg.Tap(owner, ask.MessageID, ask.Buttons()["🛑 End it"])
-	got := h.until("left", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "still running") })
+	got := h.until("left", func(m fake.Sent) bool { return strings.Contains(m.Text, "still running") })
 	h.tg.Answered(t)
 	if !strings.Contains(got.Text, "still running") {
 		t.Fatalf("%s", got.Text)

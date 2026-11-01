@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/mehyaa/claude-telegram/internal/ipc"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 	"github.com/mehyaa/claude-telegram/internal/tmux"
 )
 
@@ -123,7 +123,7 @@ func (st *stub) keys() []string {
 }
 
 // until reads the bot's messages until one satisfies ok.
-func (h *harness) until(what string, ok func(telegramtest.Sent) bool) telegramtest.Sent {
+func (h *harness) until(what string, ok func(fake.Sent) bool) fake.Sent {
 	h.t.Helper()
 	var seen []string
 	for range 20 {
@@ -134,11 +134,11 @@ func (h *harness) until(what string, ok func(telegramtest.Sent) bool) telegramte
 		seen = append(seen, m.Text)
 	}
 	h.t.Fatalf("no message %s; saw %q", what, seen)
-	return telegramtest.Sent{}
+	return fake.Sent{}
 }
 
-func hasPrefix(p string) func(telegramtest.Sent) bool {
-	return func(m telegramtest.Sent) bool { return strings.HasPrefix(m.Text, p) }
+func hasPrefix(p string) func(fake.Sent) bool {
+	return func(m fake.Sent) bool { return strings.HasPrefix(m.Text, p) }
 }
 
 func pizzaSpec() map[string]any {
@@ -170,7 +170,7 @@ func TestAnswerQuestionsFromTelegram(t *testing.T) {
 	h.tg.Tap(owner, ping.MessageID, ping.Buttons()["Answer"])
 	v := h.until("with the item", hasPrefix("ctg\n\n<b>❓ 1.1 · a</b>\nQ1 · Toppings: Which toppings? (pick any)"))
 	h.tg.Answered(t)
-	tap := func(label string) telegramtest.Sent {
+	tap := func(label string) fake.Sent {
 		t.Helper()
 		data, ok := v.Buttons()[label]
 		if !ok {
@@ -192,7 +192,7 @@ func TestAnswerQuestionsFromTelegram(t *testing.T) {
 	h.tg.Answered(t)
 	h.expect("✍️ Type your own answer for Q3. /cancel to stop.")
 	h.tg.Send(owner, "Lemonade, cold")
-	v = h.until("with Q3's text", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "✓ ✍️ Lemonade, cold") })
+	v = h.until("with Q3's text", func(m fake.Sent) bool { return strings.Contains(m.Text, "✓ ✍️ Lemonade, cold") })
 	h.tg.Tap(owner, v.MessageID, v.Buttons()["📤 Send"])
 	h.tg.Answered(t)
 
@@ -205,7 +205,7 @@ func TestAnswerQuestionsFromTelegram(t *testing.T) {
 
 	// PostToolUse then closes the item; the ping says Telegram answered.
 	h.call(ipc.Request{Op: ipc.OpItemDone, SessionID: "aaaa1111", Key: "toolu_1", Note: "answered: Which size? → Large"})
-	h.until("closing the ping", func(m telegramtest.Sent) bool {
+	h.until("closing the ping", func(m fake.Sent) bool {
 		return m.MessageID == ping.MessageID && m.Text == "✅ 1.1 · a · answered from Telegram: Which size? → Large"
 	})
 }
@@ -265,7 +265,7 @@ func TestMismatchMeansAnswerInTerminal(t *testing.T) {
 	h.tg.Answered(t)
 	h.tg.Tap(owner, v.MessageID, v.Buttons()["✅ Allow once"])
 	h.tg.Answered(t)
-	h.until("saying to answer in the terminal", func(m telegramtest.Sent) bool {
+	h.until("saying to answer in the terminal", func(m fake.Sent) bool {
 		return strings.Contains(m.Text, "⚠️ Answer in the terminal:") && strings.Contains(m.Text, `permission prompt for something else ("Bash command")`)
 	})
 	if k := st.keys(); len(k) != 0 {
@@ -405,7 +405,7 @@ func TestPostQuestion(t *testing.T) {
 	}
 	// The prompt reaches UserPromptSubmit, which closes the item.
 	h.call(ipc.Request{Op: ipc.OpUpdate, SessionID: "aaaa1111", State: ipc.StateBusy, Prompt: "[answer to 1.1] yes"})
-	h.until("closing 1.1", func(m telegramtest.Sent) bool {
+	h.until("closing 1.1", func(m fake.Sent) bool {
 		return m.MessageID == ping.MessageID && m.Text == "✅ 1.1 · a · answered from Telegram: yes"
 	})
 
@@ -414,7 +414,7 @@ func TestPostQuestion(t *testing.T) {
 	// Closing 1.1 edited its open view as well as its ping.
 	ping2 := h.until("pinging 1.2", hasPrefix("❓ 1.2"))
 	h.call(ipc.Request{Op: ipc.OpUpdate, SessionID: "aaaa1111", State: ipc.StateBusy, Prompt: "1.2 no thanks"})
-	h.until("closing 1.2", func(m telegramtest.Sent) bool {
+	h.until("closing 1.2", func(m fake.Sent) bool {
 		return m.MessageID == ping2.MessageID && m.Text == "✅ 1.2 · a · answered in terminal: no thanks"
 	})
 }
@@ -471,7 +471,7 @@ func TestRetryAfterRefusal(t *testing.T) {
 	h.tg.Answered(t)
 	h.tg.Tap(owner, v.MessageID, v.Buttons()["✅ Allow once"])
 	h.tg.Answered(t)
-	blocked := h.until("refusal", func(m telegramtest.Sent) bool {
+	blocked := h.until("refusal", func(m fake.Sent) bool {
 		return strings.Contains(m.Text, "⚠️ Answer in the terminal:")
 	})
 	if blocked.Buttons()["🔁 Retry"] == "" {
@@ -479,7 +479,7 @@ func TestRetryAfterRefusal(t *testing.T) {
 	}
 	h.tg.Tap(owner, blocked.MessageID, blocked.Buttons()["🔁 Retry"])
 	h.tg.Answered(t)
-	again := h.until("refusal after retry", func(m telegramtest.Sent) bool {
+	again := h.until("refusal after retry", func(m fake.Sent) bool {
 		return m.MessageID == blocked.MessageID && strings.Contains(m.Text, "⚠️ Answer in the terminal:")
 	})
 	if again.Buttons()["🔁 Retry"] == "" {
@@ -518,7 +518,7 @@ func TestPartialAnswerShowsScreen(t *testing.T) {
 	h.tg.Tap(owner, v.MessageID, v.Buttons()["📤 Send"])
 	h.tg.Answered(t)
 
-	scr := h.until("with the screen after a partial answer", func(m telegramtest.Sent) bool {
+	scr := h.until("with the screen after a partial answer", func(m fake.Sent) bool {
 		return m.ParseMode == "HTML" && strings.Contains(m.Text, "already answered Colour") && strings.Contains(m.Text, "<pre>")
 	})
 	if scr.Buttons()["↑"] == "" || scr.Buttons()["⏎"] == "" {
@@ -557,10 +557,10 @@ func TestTranscriptClosesItems(t *testing.T) {
 	f.Close()
 	h.d.watch()
 
-	h.until("closing the denied prompt", func(m telegramtest.Sent) bool {
+	h.until("closing the denied prompt", func(m fake.Sent) bool {
 		return m.MessageID == ping.MessageID && m.Text == "✅ 1.1 · a · denied in terminal"
 	})
-	h.until("closing the interrupted question", func(m telegramtest.Sent) bool {
+	h.until("closing the interrupted question", func(m fake.Sent) bool {
 		return m.MessageID == ping2.MessageID && m.Text == "✅ 1.2 · a · interrupted in terminal"
 	})
 
@@ -574,7 +574,7 @@ func TestTranscriptClosesItems(t *testing.T) {
 	f.Close()
 	h.start()
 	h.d.watch()
-	h.until("closing 1.3 after the restart", func(m telegramtest.Sent) bool {
+	h.until("closing 1.3 after the restart", func(m fake.Sent) bool {
 		return m.MessageID == ping3.MessageID && m.Text == "✅ 1.3 · a · cancelled in terminal"
 	})
 }

@@ -16,7 +16,7 @@ import (
 
 	"github.com/mehyaa/claude-telegram/internal/config"
 	"github.com/mehyaa/claude-telegram/internal/ipc"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 // table and git.
 type harness struct {
 	t     *testing.T
-	tg    *telegramtest.Server
+	tg    *fake.Server
 	paths config.Paths
 	d     *Daemon
 	out   syncBuffer
@@ -57,7 +57,7 @@ func newHarness(t *testing.T) *harness {
 	t.Cleanup(func() { os.RemoveAll(dir) })
 	return &harness{
 		t:  t,
-		tg: telegramtest.New(t),
+		tg: fake.New(t),
 		paths: config.Paths{
 			ConfigDir: filepath.Join(dir, "config"),
 			StateDir:  filepath.Join(dir, "state"),
@@ -105,7 +105,7 @@ func (h *harness) kill(pid int) {
 func (h *harness) config() Config {
 	c := Config{
 		Paths: h.paths,
-		Token: telegramtest.Token,
+		Token: fake.Token,
 		API:   h.tg.URL,
 		Out:   &h.out,
 		Log:   slog.New(slog.NewTextHandler(io.Discard, nil)),
@@ -231,7 +231,7 @@ func (h *harness) code() string {
 }
 
 // expect waits for the next message and checks that its text is want.
-func (h *harness) expect(want string) telegramtest.Sent {
+func (h *harness) expect(want string) fake.Sent {
 	h.t.Helper()
 	got := h.tg.Next(h.t)
 	if got.Text != want {
@@ -241,7 +241,7 @@ func (h *harness) expect(want string) telegramtest.Sent {
 }
 
 // expectPrefix waits for the next message and checks how it starts.
-func (h *harness) expectPrefix(chat int64, prefix string) telegramtest.Sent {
+func (h *harness) expectPrefix(chat int64, prefix string) fake.Sent {
 	h.t.Helper()
 	got := h.tg.Next(h.t)
 	if got.ChatID != chat || !strings.HasPrefix(got.Text, prefix) {

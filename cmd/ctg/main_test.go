@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 // TestBinary runs the built ctg: first start prints a code, the code pairs,
@@ -22,19 +22,19 @@ func TestBinary(t *testing.T) {
 	if out, err := exec.Command("go", "build", "-o", bin, ".").CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)
 	}
-	fake := telegramtest.New(t)
+	api := fake.New(t)
 	env := append(os.Environ(),
 		"XDG_CONFIG_HOME="+filepath.Join(dir, "c"),
 		"XDG_STATE_HOME="+filepath.Join(dir, "s"),
 		"XDG_RUNTIME_DIR="+filepath.Join(dir, "r"),
-		"CTG_TELEGRAM_API="+fake.URL,
+		"CTG_TELEGRAM_API="+api.URL,
 	)
 	cfgDir := filepath.Join(dir, "c", "claude-telegram")
 	if err := os.MkdirAll(cfgDir, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	tokenFile := filepath.Join(cfgDir, "token")
-	if err := os.WriteFile(tokenFile, []byte(telegramtest.Token+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(tokenFile, []byte(fake.Token+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -81,11 +81,11 @@ func TestBinary(t *testing.T) {
 		t.Fatal("daemon printed no pairing code")
 	}
 
-	fake.Send(42, code)
-	if got := fake.Next(t); got.ChatID != 42 || !strings.HasPrefix(got.Text, "Paired.") {
+	api.Send(42, code)
+	if got := api.Next(t); got.ChatID != 42 || !strings.HasPrefix(got.Text, "Paired.") {
 		t.Fatalf("after sending the code: %+v", got)
 	}
-	fake.Next(t) // the session list
+	api.Next(t) // the session list
 
 	pair := exec.Command(bin, "pair")
 	pair.Env = env

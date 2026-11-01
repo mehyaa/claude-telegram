@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/mehyaa/claude-telegram/internal/ipc"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 // transcriptSession registers a session whose transcript is a file the test
@@ -182,7 +182,7 @@ func TestFollow(t *testing.T) {
 	h.until("following again", hasPrefix("👁 Following 1 a"))
 	h.kill(101)
 	h.d.tick()
-	h.until("saying it stopped", func(m telegramtest.Sent) bool { return m.Text == "⏹ 1 a ended; stopped following it." })
+	h.until("saying it stopped", func(m fake.Sent) bool { return m.Text == "⏹ 1 a ended; stopped following it." })
 }
 
 func TestMultiSessionFollowAndManager(t *testing.T) {

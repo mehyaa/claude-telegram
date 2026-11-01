@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 // openScreen selects session 1 and opens its screen.
-func (h *harness) openScreen() telegramtest.Sent {
+func (h *harness) openScreen() fake.Sent {
 	h.t.Helper()
 	h.tg.Send(owner, "/list")
 	list := h.tg.Next(h.t)
@@ -51,7 +51,7 @@ func TestRemoteKeyboard(t *testing.T) {
 	if toast := h.tg.Answered(t); toast != "Down" {
 		t.Fatalf("toast %q", toast)
 	}
-	after := h.until("with the screen after the key", func(m telegramtest.Sent) bool {
+	after := h.until("with the screen after the key", func(m fake.Sent) bool {
 		return m.MessageID == scr.MessageID && m.Method == "editMessageText"
 	})
 	if !strings.Contains(after.Text, "❯ 2. No") {
@@ -62,7 +62,7 @@ func TestRemoteKeyboard(t *testing.T) {
 	// presses nothing (Q17).
 	h.tg.Tap(owner, scr.MessageID, b["⏎"])
 	h.tg.Answered(t)
-	stale := h.until("refusing the stale tap", func(m telegramtest.Sent) bool { return m.MessageID == scr.MessageID })
+	stale := h.until("refusing the stale tap", func(m fake.Sent) bool { return m.MessageID == scr.MessageID })
 	if !strings.Contains(stale.Text, "The screen changed before your key, so nothing was pressed.") {
 		t.Fatalf("stale tap: %q", stale.Text)
 	}
@@ -115,7 +115,7 @@ func TestTypeAndSecret(t *testing.T) {
 	h.tg.Answered(t)
 	h.expectPrefix(owner, "⌨️ Type the text for 1 a.")
 	h.tg.Send(owner, "/model") // a slash command is text here, not a bot command
-	h.until("with the new screen", func(m telegramtest.Sent) bool { return strings.Contains(m.Text, "❯\u00a0/model") })
+	h.until("with the new screen", func(m fake.Sent) bool { return strings.Contains(m.Text, "❯\u00a0/model") })
 	for range 6 {
 		st.pane.Keys("BSpace") // the terminal clears it again
 	}
@@ -126,7 +126,7 @@ func TestTypeAndSecret(t *testing.T) {
 	h.tg.Answered(t)
 	h.expectPrefix(owner, "⌨️ Type the text for 1 a.")
 	h.tg.Send(owner, "git status")
-	h.until("moving the old screen", func(m telegramtest.Sent) bool {
+	h.until("moving the old screen", func(m fake.Sent) bool {
 		return m.MessageID == scr.MessageID && m.Text == "📺 1 a: the screen is below."
 	})
 	scr = h.until("with the new screen", hasPrefix("📺 1 a · "))
@@ -146,7 +146,7 @@ func TestTypeAndSecret(t *testing.T) {
 	}
 
 	// 🔒 Secret: typed, deleted from the chat, logged by length only.
-	scr = h.until("with the screen after ⏎", func(m telegramtest.Sent) bool { return m.MessageID == scr.MessageID })
+	scr = h.until("with the screen after ⏎", func(m fake.Sent) bool { return m.MessageID == scr.MessageID })
 	h.tg.Tap(owner, scr.MessageID, scr.Buttons()["🔒 Secret"])
 	h.tg.Answered(t)
 	h.expectPrefix(owner, "🔒 Type the secret for 1 a.")
@@ -167,7 +167,7 @@ func TestTypeAndSecret(t *testing.T) {
 		t.Fatalf("stub got %v", out)
 	}
 	// Sent, it shows in the screen's history; still masked.
-	scr = h.until("with the screen after ⏎", func(m telegramtest.Sent) bool { return m.MessageID == scr.MessageID })
+	scr = h.until("with the screen after ⏎", func(m fake.Sent) bool { return m.MessageID == scr.MessageID })
 	if !strings.Contains(scr.Text, "❯ ••••") || strings.Contains(scr.Text, "hunter2") {
 		t.Fatalf("screen after sending the secret: %q", scr.Text)
 	}

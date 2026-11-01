@@ -10,15 +10,15 @@ import (
 	"unicode/utf16"
 
 	"github.com/mehyaa/claude-telegram/internal/telegram"
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 func TestRoundTrip(t *testing.T) {
-	fake := telegramtest.New(t)
-	c := telegram.New(fake.URL, telegramtest.Token)
+	api := fake.New(t)
+	c := telegram.New(api.URL, fake.Token)
 	ctx := context.Background()
 
-	fake.Send(42, "hello")
+	api.Send(42, "hello")
 	ups, err := c.GetUpdates(ctx, 0, 1)
 	if err != nil {
 		t.Fatal(err)
@@ -37,14 +37,14 @@ func TestRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := fake.Next(t)
+	got := api.Next(t)
 	if got.Text != "hi" || got.MessageID != m.MessageID || got.Buttons()["A"] != "a" {
 		t.Fatalf("sent %+v, returned message %d", got, m.MessageID)
 	}
 	if err := c.EditMessageText(ctx, 42, m.MessageID, "edited", nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := fake.Next(t); got.Method != "editMessageText" || got.Text != "edited" || got.Keyboard != nil {
+	if got := api.Next(t); got.Method != "editMessageText" || got.Text != "edited" || got.Keyboard != nil {
 		t.Fatalf("edit = %+v", got)
 	}
 }
@@ -70,7 +70,7 @@ func TestErrorsNeverQuoteTheToken(t *testing.T) {
 	}
 
 	// An API error names the method and Telegram's description only.
-	fake := telegramtest.New(t)
+	fake := fake.New(t)
 	_, err = telegram.New(fake.URL, token).SendMessage(context.Background(), 1, "x", nil)
 	var te *telegram.Error
 	if !errors.As(err, &te) || te.Code != 401 {
@@ -82,13 +82,13 @@ func TestErrorsNeverQuoteTheToken(t *testing.T) {
 }
 
 func TestLongTextIsClippedInUTF16Units(t *testing.T) {
-	fake := telegramtest.New(t)
-	c := telegram.New(fake.URL, telegramtest.Token)
+	api := fake.New(t)
+	c := telegram.New(api.URL, fake.Token)
 	// Each 🔔 is two UTF-16 units, so 3000 of them is 6000 units.
 	if _, err := c.SendMessage(context.Background(), 1, strings.Repeat("🔔", 3000), nil); err != nil {
 		t.Fatal(err)
 	}
-	got := fake.Next(t).Text
+	got := api.Next(t).Text
 	if n := len(utf16.Encode([]rune(got))); n > telegram.MaxText {
 		t.Fatalf("sent %d UTF-16 units, limit is %d", n, telegram.MaxText)
 	}

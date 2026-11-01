@@ -23,13 +23,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mehyaa/claude-telegram/internal/telegram/telegramtest"
+	"github.com/mehyaa/claude-telegram/internal/telegram/fake"
 )
 
 func main() {
 	addr, logPath := os.Args[1], os.Args[2]
-	fake := telegramtest.Start()
-	defer fake.Close()
+	phone := fake.Start()
+	defer phone.Close()
 	out, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		log.Fatal(err)
@@ -41,28 +41,28 @@ func main() {
 	go func() {
 		for {
 			select {
-			case m := <-fake.Sent():
+			case m := <-phone.Sent():
 				write(map[string]any{"t": time.Now().Format("15:04:05.000"), "method": m.Method, "msg": m.MessageID, "text": m.Text, "buttons": m.Buttons()})
-			case a := <-fake.Answers():
+			case a := <-phone.Answers():
 				write(map[string]any{"t": time.Now().Format("15:04:05.000"), "toast": a})
 			}
 		}
 	}()
 
-	target, _ := url.Parse(fake.URL)
+	target, _ := url.Parse(phone.URL)
 	api := httputil.NewSingleHostReverseProxy(target)
 	http.Handle("/api/", http.StripPrefix("/api", api))
 	http.HandleFunc("/ctl/send", func(w http.ResponseWriter, r *http.Request) {
 		chat, _ := strconv.ParseInt(r.URL.Query().Get("chat"), 10, 64)
 		text, _ := io.ReadAll(r.Body)
-		fake.Send(chat, string(text))
+		phone.Send(chat, string(text))
 		write(map[string]any{"t": time.Now().Format("15:04:05.000"), "phone_sent": string(text)})
 	})
 	http.HandleFunc("/ctl/tap", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		chat, _ := strconv.ParseInt(q.Get("chat"), 10, 64)
 		msg, _ := strconv.ParseInt(q.Get("msg"), 10, 64)
-		fake.Tap(chat, msg, q.Get("data"))
+		phone.Tap(chat, msg, q.Get("data"))
 		write(map[string]any{"t": time.Now().Format("15:04:05.000"), "phone_tapped": q.Get("data"), "on": msg})
 	})
 	log.Fatal(http.ListenAndServe(addr, nil))
