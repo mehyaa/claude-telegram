@@ -9,6 +9,30 @@ first wins. The sections under **Using it** are the features. Vocabulary is
 in [`GLOSSARY.md`](GLOSSARY.md). Decisions that are hard to undo are in
 [`docs/adr/`](docs/adr/). Released under the [MIT license](LICENSE).
 
+## Requirements
+
+### To run
+
+- Linux, amd64 or arm64, with a systemd user session (`systemctl --user`).
+  The service step installs and starts `ctg` there.
+- A Telegram account, and a bot token from
+  [@BotFather](https://t.me/BotFather).
+- Claude Code, as `claude` on `PATH`. The mcp step calls it. Automatic
+  answers need a version the probe has checked; see [Versions](#versions).
+- tmux. The bot types into a session through it.
+- bash. The shell step sources the tmux wrapper from `~/.bashrc`.
+- Outbound HTTPS to `api.telegram.org`.
+
+### To develop
+
+- Go 1.26 or later, the version in `go.mod`.
+- tmux. The dialog tests and `scripts/test-claude-tmux.sh` start a tmux
+  server of their own. A missing tmux skips those tests.
+- bash.
+- shellcheck. CI runs it on `scripts/*.sh`, `probe/*.sh`, and
+  `contrib/*.bash`.
+- jq, for the shell scripts in `probe/`.
+
 ## Setup
 
 1. Create a bot with [@BotFather](https://t.me/BotFather).
@@ -343,7 +367,7 @@ scripts/test-claude-tmux.sh  # the tmux wrapper, on a tmux server of its own
 CI runs that on every push and PR (tmux and shellcheck included). A `v*` tag
 runs the release workflow.
 
-Tests run against a fake Bot API (`internal/telegram/telegramtest`) and, for
+Tests run against a fake Bot API (`internal/telegram/fake`) and, for
 the dialogs, a stub Claude Code screen (`internal/drive/stubtui`) in a tmux
 server of their own. They keep temporary files in `.scratch/tmp`. The installer
 is tested against a sandbox `HOME`. `probe/` holds the probes: `start.sh` and
