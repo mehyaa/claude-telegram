@@ -1,0 +1,45 @@
+
+
+❯ Call the AskUserQuestion tool once with exactly one single-choice question: question "Pick a colour", header
+  "Colour", options Red, Green, Blue (short descriptions). After the answer, reply with just the word you got. No other
+  tools.
+
+● User answered Claude's questions:
+  ⎿  · Pick a colour → Green
+
+● Green
+
+✻ Churned for 11s · done 21:13
+
+❯ Call AskUserQuestion once with three questions in one call: (1) header "Toppings", question "Which toppings?",
+  multiSelect true, options Cheese, Olives, Basil; (2) header "Size", question "Which size?", single choice, options
+  Small, Large; (3) header "Drink", question "Which drink?", single choice, options Water, Juice. Short descriptions.
+  Afterwards reply with the answers exactly as you received them. No other tools.
+
+● User answered Claude's questions:
+  ⎿  · Which toppings? → Cheese, Basil
+     · Which size? → Large
+     · Which drink? → Lemonade, cold
+
+● "Which toppings?"="Cheese, Basil", "Which size?"="Large", "Which drink?"="Lemonade, cold"
+
+✻ Brewed for 5s · done 21:14
+
+❯ Call AskUserQuestion once with two questions: (1) header "Pets", question "Which pets?", multiSelect true, options
+  Cat, Dog; (2) header "Name", question "Pet name?", single choice, options Rex, Tom. Short descriptions. Afterwards
+  reply with the answers exactly as received. No other tools.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☒ Pets  ☐ Name  ✔ Submit  →
+
+Which pets?
+
+  1. [ ] Cat
+         A cat
+  2. [✔] Dog
+         A dog
+  3. [✔] Hamster
+❯    Next
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · ctrl+g to edit in nano · Esc to cancel

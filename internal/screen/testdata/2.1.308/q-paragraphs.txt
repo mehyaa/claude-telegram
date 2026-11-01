@@ -1,0 +1,19 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ Action
+
+│ The cutover has two remaining risks.
+│
+│ The replica lag on shard B is still above the threshold we set last week. Which action should we take?
+
+❯ 1. Wait
+     Hold until replica lag drops below threshold
+  2. Abort
+     Cancel the cutover and roll back
+  3. Proceed
+     Continue the cutover despite the lag
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+

@@ -1,0 +1,17 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☐ Colour  ☐ Layout  ✔ Submit  →
+
+Pick a colour
+
+❯ 1. Red
+     Warm red
+  2. Green
+     Fresh green
+  3. Blue
+     Cool blue
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel
+

@@ -1,0 +1,45 @@
+     /home/user/Projects/claude-telegram/.scratch/main UserPromptSubmit] timed out after 30s — output discarded. Raise
+     the hook's "timeout" to allow more time.
+
+● ups
+
+✻ Crunched for 31s · done 21:26
+
+❯ Call AskUserQuestion once with one single-choice question: header "Fruit", question "Which fruit?", options Apple,
+  Pear. Short descriptions. Then reply with the answer exactly as received. No other tools.
+
+● User answered Claude's questions:
+  ⎿  · Which fruit? → Mango
+
+● "Which fruit?"="Mango"
+
+✻ Worked for 3s · done 21:28
+
+❯ Call AskUserQuestion once with one single-choice question: header "Fruit", question "How many fruits?", options One,
+  Two. Short descriptions. Then reply with the answer exactly as received. No other tools.
+
+● User declined to answer questions
+  ⎿  · How many fruits? (One / Two)
+
+✻ Churned for 2s · done 21:28
+
+❯ Call AskUserQuestion once with one question: header "Days", question "Which days?", multiSelect true, options Mon,
+  Tue, Wed. Short descriptions. Then reply with the answer exactly as received. No other tools.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☐ Days  ✔ Submit  →
+
+Which days?
+
+❯ 1. [ ] Mon
+         Monday
+  2. [ ] Tue
+         Tuesday
+  3. [ ] Wed
+         Wednesday
+  4. [ ] Type something
+     Submit
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+───────────────────────────────────────────────────────────────────────────────────────────────── create-plan-txt-file ─

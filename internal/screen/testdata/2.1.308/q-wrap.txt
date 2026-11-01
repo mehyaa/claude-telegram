@@ -1,0 +1,20 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ Wrap
+
+Which label wraps?
+
+❯ 1. Ship the compact status line now and revisit the layout after the cutover window closes, keeping every field
+     abbreviated so it fits on one row of the console
+     Compact, one row
+  2. Ship the full status line with every field spelled out in plain words, accepting that it may wrap on the narrow
+     terminals used by the on-call operators tonight
+     Full, may wrap
+  3. Ship the split status line across two short rows so the draining shard and replica count sit on top while the
+     cutover window state sits underneath them
+     Split, two rows
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+

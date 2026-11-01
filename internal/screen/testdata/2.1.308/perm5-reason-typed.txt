@@ -1,0 +1,45 @@
+
+❯ Use the Bash tool to run exactly: touch probe-file-2.txt   Then reply "ok2". No other tools.
+
+  Ran 1 shell command
+
+● ok2
+
+✻ Baked for 3s · done 21:17
+
+❯ Use the Bash tool to run exactly: touch probe-file-3.txt   Then reply "ok3". No other tools.
+
+  Ran 1 shell command
+  ⎿  Denied by PermissionRequest hook
+
+● A probe hook denied the command ("late deny from probe hook"), so probe-file-3.txt wasn't created and I'm not replying
+  "ok3".
+
+✻ Worked for 4s · done 21:17
+
+❯ Use the Bash tool to run exactly: touch probe-file-4.txt   Then reply "ok4". No other tools.
+
+  Ran 1 shell command
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Baked for 2s · done 21:18
+
+❯ Use the Bash tool to run exactly: touch probe-file-5.txt   Then reply "ok5". No other tools.
+
+  Creating a fifth empty probe file
+  ⎿  $ touch probe-file-5.txt
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Bash command
+ Tip: auto mode handles these prompts for you — choose "switch to auto mode" below
+ Create a fifth empty probe file
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ touch probe-file-5.txt
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ Do you want to proceed?
+   1. Yes
+   2. Yes, and always allow access to /home/user/Projects/claude-telegram/.scratch/main from this project
+   3. Yes, and switch to auto mode · auto mode handles these prompts for you
+ ❯ 4. No, not now, probe says no
+
+ Esc to cancel

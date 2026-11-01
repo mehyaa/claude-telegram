@@ -1,0 +1,18 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ Layout
+
+│ Phase 22's console needs a dedicated status line so operators can see which shard is draining, how many replicas still
+│ hold the old schema, and whether the cutover window is still open, without scrolling. Which layout should we ship?
+
+❯ 1. Compact
+     One dense line with abbreviated fields
+  2. Full
+     One line with every field spelled out
+  3. Split
+     Fields spread across two short lines
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+

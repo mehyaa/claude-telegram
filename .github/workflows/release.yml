@@ -1,0 +1,47 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+          VERSION: ${{ github.ref_name }}
+        run: |
+          version=${VERSION#v}
+          ldflags="-X main.version=$version"
+          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$ldflags" -o ctg-linux-amd64 ./cmd/ctg
+          GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "$ldflags" -o ctg-linux-arm64 ./cmd/ctg
+          sha256sum ctg-linux-amd64 ctg-linux-arm64 > SHA256SUMS
+      - name: Sign SHA256SUMS
+        env:
+          CTG_RELEASE_KEY: ${{ secrets.CTG_RELEASE_KEY }}
+        run: |
+          if [[ -z $CTG_RELEASE_KEY ]]; then
+            echo "CTG_RELEASE_KEY is not set" >&2
+            exit 1
+          fi
+          key=$RUNNER_TEMP/ctg-release.key
+          printf '%s\n' "$CTG_RELEASE_KEY" > "$key"
+          chmod 600 "$key"
+          ./ctg-linux-amd64 sign SHA256SUMS "$key"
+          rm -f "$key"
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            ctg-linux-amd64 ctg-linux-arm64 SHA256SUMS SHA256SUMS.sig \
+            --title "$GITHUB_REF_NAME" --generate-notes

@@ -1,0 +1,45 @@
+
+
+❯ Call AskUserQuestion once with three questions in one call: (1) header "Toppings", question "Which toppings?",
+  multiSelect true, options Cheese, Olives, Basil; (2) header "Size", question "Which size?", single choice, options
+  Small, Large; (3) header "Drink", question "Which drink?", single choice, options Water, Juice. Short descriptions.
+  Afterwards reply with the answers exactly as you received them. No other tools.
+
+● User answered Claude's questions:
+  ⎿  · Which toppings? → Cheese, Basil
+     · Which size? → Large
+     · Which drink? → Lemonade, cold
+
+● "Which toppings?"="Cheese, Basil", "Which size?"="Large", "Which drink?"="Lemonade, cold"
+
+✻ Brewed for 5s · done 21:14
+
+❯ Call AskUserQuestion once with two questions: (1) header "Pets", question "Which pets?", multiSelect true, options
+  Cat, Dog; (2) header "Name", question "Pet name?", single choice, options Rex, Tom. Short descriptions. Afterwards
+  reply with the answers exactly as received. No other tools.
+
+● User declined to answer questions
+  ⎿  · Which pets? (Cat / Dog)
+     · Pet name? (Rex / Tom)
+
+✻ Sautéed for 2s · done 21:15
+
+❯ Use the Bash tool to run exactly: touch probe-file.txt   Then reply "ok". No other tools.
+
+● Creating an empty probe file
+  ⎿  $ touch probe-file.txt
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Bash command
+ Tip: auto mode handles these prompts for you — choose "switch to auto mode" below
+ Create an empty probe file
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ touch probe-file.txt
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ Do you want to proceed?
+ ❯ 1. Yes
+   2. Yes, and always allow access to /home/user/Projects/claude-telegram/.scratch/main from this project
+   3. Yes, and switch to auto mode · auto mode handles these prompts for you
+   4. No
+
+ Esc to cancel · Tab to amend

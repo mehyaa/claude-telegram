@@ -1,0 +1,45 @@
+
+ ▐▛███▛█   Claude Code v2.1.308
+▝▜██████▀  Opus 5.5 with high effort · Amazon Bedrock
+ ▝▝   ▝▝   ~/Projects/claude-telegram/.scratch/main
+
+
+❯ Call the AskUserQuestion tool once with exactly one single-choice question: question "Pick a colour", header
+  "Colour", options Red, Green, Blue (short descriptions). After the answer, reply with just the word you got. No other
+  tools.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ Colour
+
+Pick a colour
+
+❯ 1. Red
+     Warm red
+  2. Green
+     Natural green
+  3. Blue
+     Cool blue
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

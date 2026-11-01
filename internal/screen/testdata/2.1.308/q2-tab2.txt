@@ -1,0 +1,45 @@
+
+ ▐▛███▛█   Claude Code v2.1.308
+▝▜██████▀  Opus 5.5 with high effort · Amazon Bedrock
+ ▝▝   ▝▝   ~/Projects/claude-telegram/.scratch/main
+
+
+❯ Call the AskUserQuestion tool once with exactly one single-choice question: question "Pick a colour", header
+  "Colour", options Red, Green, Blue (short descriptions). After the answer, reply with just the word you got. No other
+  tools.
+
+● User answered Claude's questions:
+  ⎿  · Pick a colour → Green
+
+● Green
+
+✻ Churned for 11s · done 21:13
+
+❯ Call AskUserQuestion once with three questions in one call: (1) header "Toppings", question "Which toppings?",
+  multiSelect true, options Cheese, Olives, Basil; (2) header "Size", question "Which size?", single choice, options
+  Small, Large; (3) header "Drink", question "Which drink?", single choice, options Water, Juice. Short descriptions.
+  Afterwards reply with the answers exactly as you received them. No other tools.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☒ Toppings  ☐ Size  ☐ Drink  ✔ Submit  →
+
+Which size?
+
+❯ 1. Small
+     Small pizza
+  2. Large
+     Large pizza
+  3. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel
+
+
+
+
+
+
+
+
+
+

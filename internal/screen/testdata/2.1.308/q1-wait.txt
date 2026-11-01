@@ -1,0 +1,45 @@
+
+ ▐▛███▛█   Claude Code v2.1.308
+▝▜██████▀  Opus 5.5 with high effort · Amazon Bedrock
+ ▝▝   ▝▝   ~/Projects/claude-telegram/.scratch/main
+
+
+❯ Call the AskUserQuestion tool once with exactly one single-choice question: question "Pick a colour", header
+  "Colour", options Red, Green, Blue (short descriptions). After the answer, reply with just the word you got. No other
+  tools.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+✽ Schlepping… (running PreToolUse hook · 9s · ↓ 61 tokens)
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏸ manual mode on · esc to interrupt
