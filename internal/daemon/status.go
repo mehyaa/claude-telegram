@@ -93,7 +93,7 @@ func (d *Daemon) installLines() string {
 	home := d.home()
 	hooks, service, shell := install.StepState(filepath.Join(d.cfg.Paths.StateDir, "installed.json"))
 	var b strings.Builder
-	fmt.Fprintf(&b, "hooks: %s\n", piece(hooks, fileHas(filepath.Join(home, ".claude", "settings.json"), "ctg hook")))
+	fmt.Fprintf(&b, "hooks: %s\n", piece(hooks, hooksPresent(filepath.Join(home, ".claude", "settings.json"))))
 	fmt.Fprintf(&b, "mcp: %s\n", mcpState(home))
 	fmt.Fprintf(&b, "service: %s\n", piece(service, fileExists(filepath.Join(home, ".config", "systemd", "user", "ctg.service"))))
 	shellFile := filepath.Join(home, ".local", "share", "claude-telegram", "claude-tmux.bash")
@@ -129,6 +129,11 @@ func mcpState(home string) string {
 func fileExists(path string) bool {
 	st, err := os.Stat(path)
 	return err == nil && !st.IsDir()
+}
+
+func hooksPresent(path string) bool {
+	b, err := os.ReadFile(path)
+	return err == nil && install.HooksPresent(b)
 }
 
 func fileHas(path, needle string) bool {

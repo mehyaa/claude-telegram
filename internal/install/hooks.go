@@ -76,6 +76,25 @@ func removeHooks(current []byte) ([]byte, error) {
 	return marshalJSON(cur)
 }
 
+// HooksPresent reports whether a Claude Code settings file contains a ctg
+// hook. It reads the decoded command, so a quoted binary path still counts.
+func HooksPresent(settings []byte) bool {
+	cur, err := decodeObject(settings)
+	if err != nil {
+		return false
+	}
+	hooks, _ := cur["hooks"].(map[string]any)
+	for _, v := range hooks {
+		entries, _ := v.([]any)
+		for _, e := range entries {
+			if isCTGEntry(e) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func isCTGEntry(e any) bool {
 	m, ok := e.(map[string]any)
 	if !ok {
