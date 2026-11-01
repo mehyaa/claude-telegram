@@ -37,7 +37,8 @@ jq -nc \
 
 post=$dir/ctl/post.$event
 if mv "$post" "$post.used" 2>/dev/null; then
-  PROBE_AUTH=1 python3 -I "$(dirname "$0")/post.py" \
+  repo=$(cd "$(dirname "$0")/.." && pwd)
+  PROBE_AUTH=1 go -C "$repo" run ./probe/post \
     "${CLAUDE_CODE_MESSAGING_SOCKET-}" "$(<"$post.used")" > "$log/post.$event.$$" 2>&1
 fi
 
