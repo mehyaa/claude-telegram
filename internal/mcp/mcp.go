@@ -1,6 +1,6 @@
-// Package mcp is `ctg mcp`: a stdio MCP server with one tool, post_question
-// (Q21). Its server instructions carry the conventions for asking the owner
-// (Q23), so nothing has to go in a CLAUDE.md.
+// Package mcp is `ctg mcp`: a stdio MCP server with post_question and
+// send_message (Q21). Its server instructions carry the conventions for
+// asking the owner (Q23), so nothing has to go in a CLAUDE.md.
 package mcp
 
 import (
@@ -19,6 +19,8 @@ Blocking questions: use AskUserQuestion as usual. The owner can answer it in the
 
 Non-blocking questions: when you want the owner's input but can keep working meanwhile, call post_question and carry on. It returns at once with the question's number, such as 2.3. The answer arrives later as a message that starts with "[answer to 2.3]" (sent from Telegram) or "2.3" (typed in the terminal). Don't wait or poll for it.
 
+Push a message: call send_message with Markdown text to send it to the owner's phone now (same formatting as session content). It is not a question and does not wait for a reply.
+
 Questions in a reply: when a reply asks the owner to decide something, write each question as its own block:
 ❓ **Q<n>** - **<title>**: <question>
 ➡️ <your recommendation>
@@ -31,10 +33,18 @@ type Question struct {
 	Recommendation string   `json:"recommendation,omitempty"`
 }
 
+// Message is send_message's input.
+type Message struct {
+	Text string `json:"text"`
+}
+
 // Poster delivers a question and says what the model should be told.
 type Poster func(ctx context.Context, q Question) (string, error)
 
-var tool = map[string]any{
+// Sender delivers a free-form message and says what the model should be told.
+type Sender func(ctx context.Context, text string) (string, error)
+
+var postTool = map[string]any{
 	"name": "post_question",
 	"description": "Post a question to the owner's phone without waiting for the answer. Use it for questions that " +
 		"shouldn't stop your work. It returns the question's number at once; the answer arrives later as a message " +
@@ -47,6 +57,19 @@ var tool = map[string]any{
 			"recommendation": map[string]any{"type": "string", "description": "What you would choose, and why, in one line."},
 		},
 		"required": []string{"question"},
+	},
+}
+
+var sendTool = map[string]any{
+	"name": "send_message",
+	"description": "Send a Markdown message to the owner's phone now. Same formatting as session content. " +
+		"Not a question — use post_question when you need an answer.",
+	"inputSchema": map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"text": map[string]any{"type": "string", "description": "The message body in Markdown."},
+		},
+		"required": []string{"text"},
 	},
 }
 
@@ -66,7 +89,7 @@ type rpcError struct {
 
 // Serve answers MCP requests on r, one JSON-RPC message per line, until r
 // ends.
-func Serve(ctx context.Context, r io.Reader, w io.Writer, version string, post Poster) error {
+func Serve(ctx context.Context, r io.Reader, w io.Writer, version string, post Poster, send Sender) error {
 	enc := json.NewEncoder(w)
 	sc := bufio.NewScanner(r)
 	sc.Buffer(nil, 16<<20)
@@ -79,7 +102,7 @@ func Serve(ctx context.Context, r io.Reader, w io.Writer, version string, post P
 		if len(req.ID) == 0 {
 			continue // a notification, such as notifications/initialized
 		}
-		result, rerr := handle(ctx, req, version, post)
+		result, rerr := handle(ctx, req, version, post, send)
 		msg := map[string]any{"jsonrpc": "2.0", "id": req.ID}
 		if rerr != nil {
 			msg["error"] = rerr
@@ -93,7 +116,7 @@ func Serve(ctx context.Context, r io.Reader, w io.Writer, version string, post P
 	return sc.Err()
 }
 
-func handle(ctx context.Context, req request, version string, post Poster) (any, *rpcError) {
+func handle(ctx context.Context, req request, version string, post Poster, send Sender) (any, *rpcError) {
 	switch req.Method {
 	case "initialize":
 		var p struct {
@@ -113,26 +136,45 @@ func handle(ctx context.Context, req request, version string, post Poster) (any,
 	case "ping":
 		return map[string]any{}, nil
 	case "tools/list":
-		return map[string]any{"tools": []any{tool}}, nil
+		return map[string]any{"tools": []any{postTool, sendTool}}, nil
 	case "tools/call":
 		var p struct {
-			Name      string   `json:"name"`
-			Arguments Question `json:"arguments"`
+			Name      string          `json:"name"`
+			Arguments json.RawMessage `json:"arguments"`
 		}
 		if err := json.Unmarshal(req.Params, &p); err != nil {
 			return nil, &rpcError{-32602, "bad arguments: " + err.Error()}
 		}
-		if p.Name != "post_question" {
+		switch p.Name {
+		case "post_question":
+			var q Question
+			if err := json.Unmarshal(p.Arguments, &q); err != nil {
+				return nil, &rpcError{-32602, "bad arguments: " + err.Error()}
+			}
+			if strings.TrimSpace(q.Question) == "" {
+				return toolResult("post_question needs a question.", true), nil
+			}
+			text, err := post(ctx, q)
+			if err != nil {
+				return toolResult(err.Error(), true), nil
+			}
+			return toolResult(text, false), nil
+		case "send_message":
+			var m Message
+			if err := json.Unmarshal(p.Arguments, &m); err != nil {
+				return nil, &rpcError{-32602, "bad arguments: " + err.Error()}
+			}
+			if strings.TrimSpace(m.Text) == "" {
+				return toolResult("send_message needs text.", true), nil
+			}
+			text, err := send(ctx, m.Text)
+			if err != nil {
+				return toolResult(err.Error(), true), nil
+			}
+			return toolResult(text, false), nil
+		default:
 			return nil, &rpcError{-32602, fmt.Sprintf("no tool %q", p.Name)}
 		}
-		if strings.TrimSpace(p.Arguments.Question) == "" {
-			return toolResult("post_question needs a question.", true), nil
-		}
-		text, err := post(ctx, p.Arguments)
-		if err != nil {
-			return toolResult(err.Error(), true), nil
-		}
-		return toolResult(text, false), nil
 	}
 	return nil, &rpcError{-32601, "method not found: " + req.Method}
 }

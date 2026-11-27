@@ -17,6 +17,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -592,6 +593,31 @@ func (d *Daemon) handle(req ipc.Request, replay bool) ipc.Response {
 		}
 		resp.Code = d.startPairing()
 		d.cfg.Log.Info("pairing started from ctg pair")
+	case ipc.OpSend:
+		if replay {
+			return fail("send isn't replayed")
+		}
+		if d.chatID == 0 {
+			return fail("not paired")
+		}
+		text := strings.TrimSpace(req.Text)
+		if text == "" {
+			return fail("send needs text")
+		}
+		var s *session
+		switch {
+		case req.SessionNum != 0:
+			s = d.byNum(req.SessionNum)
+			if s == nil {
+				return fail("unknown session %d", req.SessionNum)
+			}
+		case req.PID != 0:
+			s = d.byPID(req.PID) // may be nil → bare body
+		}
+		d.sendOutbound(text, s)
+		if s != nil {
+			resp.Tag = s.tag()
+		}
 	default:
 		return fail("unknown op %q", req.Op)
 	}

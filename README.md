@@ -70,7 +70,7 @@ in [`GLOSSARY.md`](GLOSSARY.md). Decisions that are hard to undo are in
    | `pair` | shows a 6-digit code to send to the bot from your Telegram account, waits for it, and checks the paired chat against `TELEGRAM_USER_ID` |
    | `service` | installs and starts the systemd user service `ctg` |
    | `hooks` | backs up `~/.claude/settings.json` and adds ctg's hooks; other hooks stay |
-   | `mcp` | adds the `post_question` MCP server for all projects |
+   | `mcp` | adds the ctg MCP server (`post_question`, `send_message`) for all projects |
    | `shell` | copies the tmux wrapper to `~/.local/share/claude-telegram/` and sources it from `~/.bashrc` |
 
    One step at a time: `ctg install pair`. `--yes` skips the questions.
@@ -101,8 +101,9 @@ snake_case are converted (`MyApp` → `my-app`); a quoted prompt such as
 |---|---|
 | `ctg daemon` | run the Telegram bot (the systemd user service runs this) |
 | `ctg pair` | print a new pairing code; the running daemon accepts it for 15 minutes |
+| `ctg send [--session N] [text]` | send a Markdown message to the paired chat (stdin if no text / lone `-`) |
 | `ctg hook <event>` | called by Claude Code's hooks; reads the hook input on stdin |
-| `ctg mcp` | the `post_question` MCP server, run by Claude Code |
+| `ctg mcp` | the MCP server (`post_question`, `send_message`), run by Claude Code |
 | `ctg install [--yes] [step…]` | install, asking before each step |
 | `ctg uninstall [--yes] [step…]` | undo the install, last first |
 | `ctg update` | download the latest signed release for this CPU, check `SHA256SUMS` and its ed25519 signature, replace `~/.local/bin/ctg`, re-run hooks/service/shell if those embedded files changed, restart the service |

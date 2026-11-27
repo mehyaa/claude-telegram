@@ -25,6 +25,7 @@ const (
 	OpItemAdd  = "item.add"       // something needs the owner; Item is set
 	OpItemDone = "item.close"     // that something was dealt with; Key and Note
 	OpPair     = "pair"           // start pairing; the response has Code
+	OpSend     = "send"           // push Markdown to the paired chat; Text is set
 )
 
 // Session states for OpUpdate.
@@ -43,21 +44,23 @@ const (
 )
 
 type Request struct {
-	Op        string    `json:"op"`
-	Time      time.Time `json:"time,omitzero"` // when it happened; set on spooled requests
-	SessionID string    `json:"session_id,omitempty"`
-	PID       int       `json:"pid,omitempty"` // instead of SessionID: the session whose process this is (ctg mcp)
-	Session   *Session  `json:"session,omitempty"`
-	State     string    `json:"state,omitempty"`
-	Name      *string   `json:"name,omitempty"`
-	Cwd       string    `json:"cwd,omitempty"`
-	Prompt    string    `json:"prompt,omitempty"` // OpUpdate: the start of a submitted prompt (Q21)
-	Reply     string    `json:"reply,omitempty"`  // OpUpdate at a turn's end: the model's last reply (Q22)
-	Tasks     *[]Task   `json:"tasks,omitempty"`  // Stop: background_tasks, replacing the session's list (Q82)
-	Crons     *int      `json:"crons,omitempty"`  // Stop: how many session_crons are pending
-	Item      *Item     `json:"item,omitempty"`
-	Key       string    `json:"key,omitempty"`
-	Note      string    `json:"note,omitempty"`
+	Op         string    `json:"op"`
+	Time       time.Time `json:"time,omitzero"` // when it happened; set on spooled requests
+	SessionID  string    `json:"session_id,omitempty"`
+	PID        int       `json:"pid,omitempty"` // instead of SessionID: the session whose process this is (ctg mcp)
+	Session    *Session  `json:"session,omitempty"`
+	State      string    `json:"state,omitempty"`
+	Name       *string   `json:"name,omitempty"`
+	Cwd        string    `json:"cwd,omitempty"`
+	Prompt     string    `json:"prompt,omitempty"` // OpUpdate: the start of a submitted prompt (Q21)
+	Reply      string    `json:"reply,omitempty"`  // OpUpdate at a turn's end: the model's last reply (Q22)
+	Tasks      *[]Task   `json:"tasks,omitempty"`  // Stop: background_tasks, replacing the session's list (Q82)
+	Crons      *int      `json:"crons,omitempty"`  // Stop: how many session_crons are pending
+	Item       *Item     `json:"item,omitempty"`
+	Key        string    `json:"key,omitempty"`
+	Note       string    `json:"note,omitempty"`
+	Text       string    `json:"text,omitempty"`        // OpSend: Markdown body
+	SessionNum int       `json:"session_num,omitempty"` // OpSend: optional session number
 }
 
 // Task is one background task from a Stop hook's background_tasks.
@@ -112,6 +115,7 @@ type Response struct {
 	Number int    `json:"number,omitempty"` // OpRegister: the session's number
 	Item   string `json:"item,omitempty"`   // OpItemAdd: the item's number, e.g. "2.1"
 	Code   string `json:"code,omitempty"`   // OpPair: the pairing code
+	Tag    string `json:"tag,omitempty"`    // OpSend: session tag when one was attached
 }
 
 // Call sends one request to the daemon at socket and waits for the answer,

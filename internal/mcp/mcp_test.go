@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -14,20 +15,33 @@ func TestServe(t *testing.T) {
 		`{"jsonrpc":"2.0","id":2,"method":"tools/list"}`,
 		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"post_question","arguments":{"question":"Use SQLite?","options":["yes","no"],"recommendation":"yes: one file"}}}`,
 		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"post_question","arguments":{"question":" "}}}`,
-		`{"jsonrpc":"2.0","id":5,"method":"nope"}`,
+		`{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"send_message","arguments":{"text":"Hello **phone**"}}}`,
+		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"send_message","arguments":{"text":" "}}}`,
+		`{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"send_message","arguments":{"text":"fail"}}}`,
+		`{"jsonrpc":"2.0","id":8,"method":"nope"}`,
 	}, "\n") + "\n"
 	var got Question
+	var sent string
 	var out strings.Builder
-	err := Serve(context.Background(), strings.NewReader(in), &out, "test", func(_ context.Context, q Question) (string, error) {
-		got = q
-		return "Posted as 2.3.", nil
-	})
+	err := Serve(context.Background(), strings.NewReader(in), &out, "test",
+		func(_ context.Context, q Question) (string, error) {
+			got = q
+			return "Posted as 2.3.", nil
+		},
+		func(_ context.Context, text string) (string, error) {
+			if text == "fail" {
+				return "", errors.New("not sent: not paired")
+			}
+			sent = text
+			return "sent · #1 myapp", nil
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
-	if len(lines) != 5 {
-		t.Fatalf("%d replies (a notification gets none), want 5:\n%s", len(lines), out.String())
+	if len(lines) != 8 {
+		t.Fatalf("%d replies (a notification gets none), want 8:\n%s", len(lines), out.String())
 	}
 	var replies []map[string]any
 	for _, l := range lines {
@@ -37,11 +51,19 @@ func TestServe(t *testing.T) {
 	}
 	init := replies[0]["result"].(map[string]any)
 	if init["protocolVersion"] != "2025-06-18" || !strings.Contains(init["instructions"].(string), "post_question") ||
+		!strings.Contains(init["instructions"].(string), "send_message") ||
 		!strings.Contains(init["instructions"].(string), "❓ **Q<n>**") {
 		t.Fatalf("initialize: %v", init)
 	}
 	tools := replies[1]["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 1 || tools[0].(map[string]any)["name"] != "post_question" {
+	if len(tools) != 2 {
+		t.Fatalf("tools: %v", tools)
+	}
+	names := map[string]bool{}
+	for _, tool := range tools {
+		names[tool.(map[string]any)["name"].(string)] = true
+	}
+	if !names["post_question"] || !names["send_message"] {
 		t.Fatalf("tools: %v", tools)
 	}
 	call := replies[2]["result"].(map[string]any)
@@ -54,7 +76,20 @@ func TestServe(t *testing.T) {
 	if replies[3]["result"].(map[string]any)["isError"] != true {
 		t.Fatalf("an empty question should be a tool error: %v", replies[3])
 	}
-	if replies[4]["error"].(map[string]any)["code"].(float64) != -32601 {
-		t.Fatalf("unknown method: %v", replies[4])
+	send := replies[4]["result"].(map[string]any)
+	if send["isError"] != false || send["content"].([]any)[0].(map[string]any)["text"] != "sent · #1 myapp" {
+		t.Fatalf("send: %v", send)
+	}
+	if sent != "Hello **phone**" {
+		t.Fatalf("sent body %q", sent)
+	}
+	if replies[5]["result"].(map[string]any)["isError"] != true {
+		t.Fatalf("empty send should be a tool error: %v", replies[5])
+	}
+	if replies[6]["result"].(map[string]any)["isError"] != true {
+		t.Fatalf("failed send should be a tool error: %v", replies[6])
+	}
+	if replies[7]["error"].(map[string]any)["code"].(float64) != -32601 {
+		t.Fatalf("unknown method: %v", replies[7])
 	}
 }

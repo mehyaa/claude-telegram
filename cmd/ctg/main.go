@@ -9,9 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -28,14 +31,24 @@ const usage = `usage: ctg <command>
 
   daemon                    run the Telegram bot (normally as the systemd user service)
   pair                      print a new pairing code; the running daemon accepts it for 15 minutes
+  send [--session N] [text] send a Markdown message to the paired chat (stdin if no text / lone -)
   hook <event>              called by Claude Code's hooks; reads the hook input on stdin
-  mcp                       the post_question MCP server, run by Claude Code
+  mcp                       the MCP server (post_question, send_message), run by Claude Code
   install [--yes] [step…]   install ctg, asking before each step
   uninstall [--yes] [step…] undo the install, last first
   update                    download the latest signed release and put it in place
   keygen [file]             generate an ed25519 key pair for release signatures
   sign <SHA256SUMS> <key>   write SHA256SUMS.sig (release workflow)
   version                   print the version
+`
+
+const sendUsage = `usage: ctg send [--session N] [text…]
+       ctg send [--session N] -
+       ctg send [--session N] < file.md
+
+Send a Markdown message to the paired Telegram chat. With no text args, or
+with a lone "-", the body is read from stdin. --session N prefixes the
+message with that session's tag.
 `
 
 // version is stamped in at release (Q61). `go build -ldflags "-X main.version=…"`.
@@ -65,6 +78,8 @@ func main() {
 		err = runDaemon()
 	case "pair":
 		err = runPair()
+	case "send":
+		err = runSend(args)
 	case "install":
 		err = install.Install(args, os.Stdin, os.Stdout, os.Stderr)
 	case "uninstall":
@@ -170,6 +185,84 @@ func runPair() error {
 	return nil
 }
 
+func runSend(args []string) error {
+	sessionNum, textArgs, err := parseSendArgs(args)
+	if err != nil {
+		fmt.Fprint(os.Stderr, sendUsage)
+		return err
+	}
+	body, err := sendBody(textArgs)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(body) == "" {
+		fmt.Fprint(os.Stderr, sendUsage)
+		return fmt.Errorf("send needs text")
+	}
+	p, err := config.Default()
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req := ipc.Request{Op: ipc.OpSend, Text: body, SessionNum: sessionNum}
+	_, err = ipc.Call(ctx, p.Socket, req)
+	if err != nil {
+		var de *ipc.DaemonError
+		if errors.As(err, &de) {
+			return err
+		}
+		return fmt.Errorf("can't reach the daemon on %s (%v); is `ctg daemon` running?", p.Socket, err)
+	}
+	return nil
+}
+
+func parseSendArgs(args []string) (sessionNum int, text []string, err error) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "-h" || a == "--help":
+			fmt.Print(sendUsage)
+			os.Exit(0)
+		case a == "--":
+			return sessionNum, append(text, args[i+1:]...), nil
+		case a == "--session":
+			if i+1 >= len(args) {
+				return 0, nil, fmt.Errorf("--session needs a session number")
+			}
+			n, convErr := strconv.Atoi(args[i+1])
+			if convErr != nil || n <= 0 {
+				return 0, nil, fmt.Errorf("--session needs a positive session number")
+			}
+			sessionNum = n
+			i++
+		case strings.HasPrefix(a, "--session="):
+			n, convErr := strconv.Atoi(strings.TrimPrefix(a, "--session="))
+			if convErr != nil || n <= 0 {
+				return 0, nil, fmt.Errorf("--session needs a positive session number")
+			}
+			sessionNum = n
+		case strings.HasPrefix(a, "-") && a != "-":
+			return 0, nil, fmt.Errorf("unknown flag %s", a)
+		default:
+			text = append(text, a)
+		}
+	}
+	return sessionNum, text, nil
+}
+
+func sendBody(textArgs []string) (string, error) {
+	if len(textArgs) == 1 && textArgs[0] == "-" {
+		b, err := io.ReadAll(os.Stdin)
+		return string(b), err
+	}
+	if len(textArgs) > 0 {
+		return strings.Join(textArgs, " "), nil
+	}
+	b, err := io.ReadAll(os.Stdin)
+	return string(b), err
+}
+
 func runMCP() error {
 	p, err := config.Default()
 	if err != nil {
@@ -198,7 +291,20 @@ func runMCP() error {
 		return fmt.Sprintf("Posted as %s. Keep working; don't wait for the answer. It arrives as a message starting "+
 			"\"[answer to %s]\" (from Telegram) or \"%s\" (from the terminal).", n, n, n), nil
 	}
-	return mcp.Serve(context.Background(), os.Stdin, os.Stdout, version, post)
+	send := func(ctx context.Context, text string) (string, error) {
+		req := ipc.Request{Op: ipc.OpSend, Text: text, PID: pid}
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		resp, err := ipc.Call(ctx, p.Socket, req)
+		if err != nil {
+			return "", fmt.Errorf("not sent: %v", err)
+		}
+		if resp.Tag != "" {
+			return "sent · " + resp.Tag, nil
+		}
+		return "sent", nil
+	}
+	return mcp.Serve(context.Background(), os.Stdin, os.Stdout, version, post, send)
 }
 
 func randomID() string {
